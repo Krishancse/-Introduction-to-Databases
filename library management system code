@@ -1,0 +1,104 @@
+-- Library Management System using MySQL/PostgreSQL
+
+-- Creating the Database
+CREATE DATABASE LibraryDB;
+USE LibraryDB; -- Use this for MySQL, for PostgreSQL use \c LibraryDB;
+
+-- Creating the Books Table
+CREATE TABLE Books (
+    BookID SERIAL PRIMARY KEY,
+    Title VARCHAR(255) NOT NULL,
+    Author VARCHAR(255) NOT NULL,
+    ISBN VARCHAR(20) UNIQUE NOT NULL,
+    PublishedYear INT,
+    Genre VARCHAR(100),
+    CopiesAvailable INT DEFAULT 1
+);
+
+-- Creating the Members Table
+CREATE TABLE Members (
+    MemberID SERIAL PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL,
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    Phone VARCHAR(20),
+    Address TEXT,
+    JoinDate DATE DEFAULT CURRENT_DATE,
+    MembershipType VARCHAR(50) CHECK (MembershipType IN ('Standard', 'Premium', 'Student'))
+);
+
+-- Creating the Borrowing Table
+CREATE TABLE Borrowings (
+    BorrowID SERIAL PRIMARY KEY,
+    MemberID INT REFERENCES Members(MemberID) ON DELETE CASCADE,
+    BookID INT REFERENCES Books(BookID) ON DELETE CASCADE,
+    BorrowDate DATE DEFAULT CURRENT_DATE,
+    DueDate DATE,
+    ReturnDate DATE,
+    Status VARCHAR(50) CHECK (Status IN ('Borrowed', 'Returned', 'Overdue'))
+);
+
+-- Creating the Librarians Table
+CREATE TABLE Librarians (
+    LibrarianID SERIAL PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL,
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    Phone VARCHAR(20),
+    HireDate DATE DEFAULT CURRENT_DATE
+);
+
+-- Creating the Transactions Table
+CREATE TABLE Transactions (
+    TransactionID SERIAL PRIMARY KEY,
+    BorrowID INT REFERENCES Borrowings(BorrowID) ON DELETE CASCADE,
+    Amount DECIMAL(10,2),
+    PaymentDate DATE DEFAULT CURRENT_DATE,
+    PaymentMethod VARCHAR(50) CHECK (PaymentMethod IN ('Cash', 'Card', 'Online'))
+);
+
+-- Creating the Reviews Table
+CREATE TABLE Reviews (
+    ReviewID SERIAL PRIMARY KEY,
+    MemberID INT REFERENCES Members(MemberID) ON DELETE CASCADE,
+    BookID INT REFERENCES Books(BookID) ON DELETE CASCADE,
+    Rating INT CHECK (Rating BETWEEN 1 AND 5),
+    ReviewText TEXT,
+    ReviewDate DATE DEFAULT CURRENT_DATE
+);
+
+-- Insert Sample Data
+INSERT INTO Books (Title, Author, ISBN, PublishedYear, Genre, CopiesAvailable) VALUES
+('The Great Gatsby', 'F. Scott Fitzgerald', '9780743273565', 1925, 'Fiction', 5),
+('1984', 'George Orwell', '9780451524935', 1949, 'Dystopian', 3),
+('To Kill a Mockingbird', 'Harper Lee', '9780061120084', 1960, 'Fiction', 4),
+('Moby Dick', 'Herman Melville', '9781503280786', 1851, 'Adventure', 2),
+('Pride and Prejudice', 'Jane Austen', '9781503290563', 1813, 'Romance', 6);
+
+INSERT INTO Members (Name, Email, Phone, Address, MembershipType) VALUES
+('John Doe', 'johndoe@example.com', '123-456-7890', '123 Main St, Cityville', 'Standard'),
+('Jane Smith', 'janesmith@example.com', '987-654-3210', '456 Elm St, Townsville', 'Premium'),
+('Alice Johnson', 'alicej@example.com', '555-333-2222', '789 Pine St, Villagetown', 'Student'),
+('Bob Williams', 'bobw@example.com', '777-888-9999', '101 Maple St, Cityplace', 'Standard');
+
+INSERT INTO Borrowings (MemberID, BookID, DueDate, Status) VALUES
+(1, 1, DATE_ADD(CURRENT_DATE, INTERVAL 14 DAY), 'Borrowed'),
+(2, 2, DATE_ADD(CURRENT_DATE, INTERVAL 14 DAY), 'Borrowed'),
+(3, 3, DATE_ADD(CURRENT_DATE, INTERVAL 14 DAY), 'Borrowed'),
+(4, 4, DATE_ADD(CURRENT_DATE, INTERVAL 14 DAY), 'Returned');
+
+INSERT INTO Librarians (Name, Email, Phone) VALUES
+('Emma Brown', 'emma@example.com', '111-222-3333'),
+('Michael Scott', 'michael@example.com', '444-555-6666');
+
+INSERT INTO Transactions (BorrowID, Amount, PaymentMethod) VALUES
+(1, 5.00, 'Cash'),
+(2, 10.00, 'Card');
+
+INSERT INTO Reviews (MemberID, BookID, Rating, ReviewText) VALUES
+(1, 1, 5, 'Amazing book!'),
+(2, 2, 4, 'Great read, highly recommend!');
+
+-- Borrow a Book
+INSERT INTO Borrowings (MemberID, BookID, DueDate, Status) VALUES (3, 5, DATE_ADD(CURRENT_DATE, INTERVAL 14 DAY), 'Borrowed');
+
+-- Return a Book
+UPDATE Borrowings SET ReturnDate = CURRENT_DATE, Status = 'Returned' WHERE BorrowID = 1;
